@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
 // Define the schema for the supplier model
 const SupplierSchema = new mongoose.Schema({
@@ -24,7 +24,7 @@ const SupplierSchema = new mongoose.Schema({
         type: String,
         required: true,
         trim: true,
-        match: [/^\d{10,15}$/, 'Please enter a valid phone number'],
+        match: [/^\+?[1-9]\d{1,4}?\d{9,15}$/, 'Please enter a valid phone number with country code'],
     },
     address: {
         type: String,

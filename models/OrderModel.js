@@ -1,5 +1,4 @@
-const mongoose = require('mongoose');
-
+import mongoose from "mongoose";
 // Define the schema for the order model
 const OrderSchema = new mongoose.Schema({
     orderNumber: {

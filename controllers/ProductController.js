@@ -1,6 +1,16 @@
-import Product from "../models/ProductModel.js";
 
-// Add Product
+// Add Product with SKU generation logic
+import Product from '../models/ProductModel.js';
+import Counter from '../models/CounterModel.js'; // Import the counter model
+import Supplier from '../models/SupplierModel.js';
+
+// Utility function to generate SKU prefix from product name
+const generateSkuPrefix = (name) => {
+    // Example: use the first 3 letters of the product name (converted to uppercase)
+    return name.trim().substring(0, 3).toUpperCase();
+};
+
+// Add Product with SKU generation logic based on product name
 export const addProduct = async (req, res) => {
     const { name, price, stock, category, status, description, image, supplier, colors, sizes } = req.body;
 
@@ -18,10 +28,24 @@ export const addProduct = async (req, res) => {
     }
 
     try {
+        // Generate SKU prefix from the product name
+        const skuPrefix = generateSkuPrefix(name);
+
+        // Find or increment the SKU sequence for the product name
+        const counter = await Counter.findOneAndUpdate(
+            { name: `SKU_${skuPrefix}` },  // Use a counter specific to the product prefix
+            { $inc: { seq: 1 } },          // Increment the sequence
+            { new: true, upsert: true }    // Create a new counter if it doesn't exist
+        );
+
+        // Generate the final SKU: Prefix + sequence (e.g., APP-000001)
+        const sku = `${skuPrefix}-${counter.seq.toString().padStart(6, '0')}`;
+
+        // Create new product with generated SKU
         const product = new Product({
             name,
             price,
-            sku: "KSJ3",
+            sku, // Use generated SKU
             stock,
             category,
             status,
@@ -32,13 +56,25 @@ export const addProduct = async (req, res) => {
             sizes,
         });
 
+        // Save the new product
         const savedProduct = await product.save();
+
+        // Update the supplier's productsSupplied array
+        await Supplier.findByIdAndUpdate(
+            supplier,
+            { $push: { productsSupplied: savedProduct._id } },
+            { new: true } // Return the updated supplier document
+        );
+
         res.status(201).json({ message: 'Product added successfully', product: savedProduct });
     } catch (error) {
         console.error('Error adding product:', error);
         res.status(500).json({ message: 'Error adding product', error });
     }
 };
+
+
+
 
 // Get All Products
 export const getAllProducts = async (req, res) => {

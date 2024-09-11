@@ -1,5 +1,4 @@
-const mongoose = require('mongoose');
-
+import mongoose from "mongoose";
 // Define the schema for the inventory list model
 const InventoryListSchema = new mongoose.Schema({
     product: {

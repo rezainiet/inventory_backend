@@ -1,5 +1,4 @@
-const mongoose = require('mongoose');
-
+import mongoose from "mongoose";
 // Define the schema for the user model
 const UserSchema = new mongoose.Schema({
     googleId: {
