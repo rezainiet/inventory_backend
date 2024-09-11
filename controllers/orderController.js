@@ -1,17 +1,36 @@
 import Order from "../models/OrderModel.js";
 import Product from "../models/ProductModel.js";
 
-// Function to create a new order
 export const createOrder = async (req, res) => {
-    const { customerName, products, shippingAddress } = req.body;
+    const {
+        customerName,
+        customerPhone,
+        customerEmail,
+        products,
+        shippingAddress,
+        billingAddress,
+        discount = 0,
+        tax = 0,
+        paymentMethod,
+        notes
+    } = req.body;
 
-    if (!customerName || !products || products.length === 0 || !shippingAddress) {
+    if (!customerName || !customerPhone || !products || products.length === 0 || !shippingAddress || !paymentMethod) {
         return res.status(400).json({ message: 'Please provide all required fields.' });
     }
 
     try {
+        // Check if order quantity exceeds stock
+        for (let item of products) {
+            const product = await Product.findById(item.product);
+            if (!product || product.stock < item.quantity) {
+                return res.status(400).json({ message: `Insufficient stock for product ${product.name}. Available stock: ${product.stock}` });
+            }
+        }
+
         // Calculate total amount for the order
         const totalAmount = products.reduce((acc, item) => acc + item.price * item.quantity, 0);
+        const finalAmount = totalAmount - discount + tax;
 
         // Generate a unique order number
         const orderNumber = `ORD-${Date.now()}`;
@@ -20,9 +39,17 @@ export const createOrder = async (req, res) => {
         const newOrder = new Order({
             orderNumber,
             customerName,
+            customerPhone,
+            customerEmail,
             products,
             totalAmount,
+            discount,
+            tax,
+            finalAmount,
             shippingAddress,
+            billingAddress: billingAddress || shippingAddress,
+            paymentMethod,
+            notes,
         });
 
         // Save the order in the database
