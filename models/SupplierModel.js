@@ -20,11 +20,12 @@ const SupplierSchema = new mongoose.Schema({
         trim: true,
         match: [/.+\@.+\..+/, 'Please enter a valid email address'],
     },
+
     phone: {
         type: String,
         required: true,
         trim: true,
-        match: [/^\+?[1-9]\d{1,4}?\d{9,15}$/, 'Please enter a valid phone number with country code'],
+        match: [/^\+?[0-9]\d{1,4}?\d{9,15}$/, 'Please enter a valid phone number with country code'],
     },
     address: {
         type: String,
