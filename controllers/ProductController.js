@@ -74,12 +74,9 @@ export const addProduct = async (req, res) => {
 };
 
 
-
-
 // Get All Products
 export const getAllProducts = async (req, res) => {
     try {
-        console.log('Fetching all products');
         const products = await Product.find();
         // console.log('Products fetched:', products);
         res.status(200).json(products);
