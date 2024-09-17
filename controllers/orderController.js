@@ -70,11 +70,12 @@ export const createOrder = async (req, res) => {
 };
 
 
-// Get all orders
-
-export const getOrders = async (req, res) => {
+// Get all orders excluding 'Delivered' and 'Cancelled' statuses
+export const getIncompleteOrders = async (req, res) => {
     const { search = '', page = 1, limit = 5, startDate, endDate } = req.query; // Default limit to 5
-    const query = {};
+    const query = {
+        fulfillmentStatus: { $nin: ['Delivered', 'Cancelled'] } // Exclude 'Delivered' and 'Cancelled'
+    };
 
     // Search by order number or customer name
     if (search) {
@@ -112,6 +113,58 @@ export const getOrders = async (req, res) => {
         res.status(500).json({ message: 'Error fetching orders' });
     }
 };
+
+
+// Get all orders
+export const getAllOrders = async (req, res) => {
+    const { search = '', page = 1, limit = 5, startDate, endDate } = req.query; // Default limit to 5
+    const query = {};
+
+    // Search by order number or customer name
+    if (search) {
+        query.$or = [
+            { orderNumber: { $regex: search, $options: 'i' } },
+            { customerName: { $regex: search, $options: 'i' } }
+        ];
+    }
+
+    // Filter by order date range
+    if (startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        // Set the end date to the end of the day (23:59:59)
+        end.setHours(23, 59, 59, 999);
+
+        query.orderDate = { $gte: start, $lte: end };
+    }
+
+    try {
+        // Populate products in the order with their full details
+        const orders = await Order.find(query)
+            .skip((page - 1) * limit)
+            .limit(parseInt(limit))
+            .sort({ orderDate: -1 })
+            .populate({
+                path: 'products.product', // Path to the product reference
+                model: 'Product',         // Refers to the Product model
+                select: 'name sku price category status', // Choose fields to include
+            });
+
+        const totalOrders = await Order.countDocuments(query);
+
+        res.status(200).json({
+            orders,
+            totalPages: Math.ceil(totalOrders / limit),
+            currentPage: parseInt(page),
+        });
+    } catch (error) {
+        console.error('Error fetching orders:', error);
+        res.status(500).json({ message: 'Error fetching orders' });
+    }
+};
+
+
+
 
 
 export const deleteOrder = async (req, res) => {

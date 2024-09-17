@@ -1,13 +1,16 @@
 import express from 'express';
-import { createOrder, deleteOrder, getOrders, updateOrderStatus } from '../controllers/orderController.js';
+import { createOrder, deleteOrder, getAllOrders, getIncompleteOrders, updateOrderStatus } from '../controllers/orderController.js';
 
 const router = express.Router();
 
 // POST route to create a new order
 router.post('/create', createOrder);
 
+// GET route to retrieve orders exclude delivered and cancelled
+router.get('/', getIncompleteOrders);
+
 // GET route to retrieve orders
-router.get('/', getOrders);
+router.get('/getAllOrders', getAllOrders);
 
 // DELETE route to delete an order
 router.delete('/:id', deleteOrder);
