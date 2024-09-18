@@ -134,7 +134,6 @@ export const getAllOrders = async (req, res) => {
         const end = new Date(endDate);
         // Set the end date to the end of the day (23:59:59)
         end.setHours(23, 59, 59, 999);
-
         query.orderDate = { $gte: start, $lte: end };
     }
 
@@ -162,8 +161,6 @@ export const getAllOrders = async (req, res) => {
         res.status(500).json({ message: 'Error fetching orders' });
     }
 };
-
-
 
 
 
