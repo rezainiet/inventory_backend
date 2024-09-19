@@ -63,7 +63,7 @@ const OrderSchema = new mongoose.Schema({
     },
     paymentMethod: {
         type: String,
-        enum: ['Cash', 'Bank Transfer', 'Cash on Delivery'], // Customize as per your options
+        enum: ['Cash', 'Pathao', 'SteadFast'], // Customize as per your options
         required: true,
     },
     fulfillmentStatus: {
