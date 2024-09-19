@@ -1,4 +1,4 @@
-import mongoose from 'mongoose'; // Use import if using ES modules
+import mongoose from 'mongoose';
 
 // Define the schema for the product model
 const ProductSchema = new mongoose.Schema({
@@ -12,7 +12,12 @@ const ProductSchema = new mongoose.Schema({
         required: true,
         unique: true,
     },
-    price: {
+    price: { // Selling price
+        type: Number,
+        required: true,
+        min: 0,
+    },
+    productionCost: { // Cost price (production price)
         type: Number,
         required: true,
         min: 0,
@@ -41,7 +46,6 @@ const ProductSchema = new mongoose.Schema({
     supplier: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Supplier',
-        // required: true,
     },
     lastUpdated: {
         type: Date,

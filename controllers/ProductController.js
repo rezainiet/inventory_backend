@@ -12,14 +12,15 @@ const generateSkuPrefix = (name) => {
 
 // Add Product with SKU generation logic based on product name
 export const addProduct = async (req, res) => {
-    const { name, price, stock, category, status, description, image, supplier, colors, sizes } = req.body;
+    const { name, price, productionCost, stock, category, status, description, image, supplier, colors, sizes } = req.body;
 
-    if (!name || !price || !stock || !category || !supplier) {
+    if (!name || !price || !productionCost || !stock || !category || !supplier) {
         return res.status(400).json({
             message: 'Please provide all required fields.',
             missingFields: {
                 name: !name,
                 price: !price,
+                productionCost: !productionCost,
                 stock: !stock,
                 category: !category,
                 supplier: !supplier
@@ -28,24 +29,19 @@ export const addProduct = async (req, res) => {
     }
 
     try {
-        // Generate SKU prefix from the product name
         const skuPrefix = generateSkuPrefix(name);
-
-        // Find or increment the SKU sequence for the product name
         const counter = await Counter.findOneAndUpdate(
-            { name: `SKU_${skuPrefix}` },  // Use a counter specific to the product prefix
-            { $inc: { seq: 1 } },          // Increment the sequence
-            { new: true, upsert: true }    // Create a new counter if it doesn't exist
+            { name: `SKU_${skuPrefix}` },
+            { $inc: { seq: 1 } },
+            { new: true, upsert: true }
         );
-
-        // Generate the final SKU: Prefix + sequence (e.g., APP-000001)
         const sku = `${skuPrefix}-${counter.seq.toString().padStart(6, '0')}`;
 
-        // Create new product with generated SKU
         const product = new Product({
             name,
             price,
-            sku, // Use generated SKU
+            productionCost, // Include production price
+            sku,
             stock,
             category,
             status,
@@ -56,15 +52,8 @@ export const addProduct = async (req, res) => {
             sizes,
         });
 
-        // Save the new product
         const savedProduct = await product.save();
-
-        // Update the supplier's productsSupplied array
-        await Supplier.findByIdAndUpdate(
-            supplier,
-            { $push: { productsSupplied: savedProduct._id } },
-            { new: true } // Return the updated supplier document
-        );
+        await Supplier.findByIdAndUpdate(supplier, { $push: { productsSupplied: savedProduct._id } }, { new: true });
 
         res.status(201).json({ message: 'Product added successfully', product: savedProduct });
     } catch (error) {
@@ -72,6 +61,7 @@ export const addProduct = async (req, res) => {
         res.status(500).json({ message: 'Error adding product', error });
     }
 };
+
 
 
 // Get All Products
