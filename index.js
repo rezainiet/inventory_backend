@@ -7,6 +7,7 @@ import productRoutes from './routes/productRoutes.js'; // Import the product rou
 import supplierRoutes from './routes/supplierRoutes.js'; // Import the supplier routes
 import orderRoutes from './routes/orderRoutes.js'; // Import the order routes
 import userRoutes from './routes/userRoute.js'; // Import the user routes
+import salesRoutes from './routes/salesRoutes.js'; // Import the sales routes
 
 const app = express();
 const PORT = parseInt(process.env.PORT, 10) || 4000;
@@ -24,6 +25,7 @@ app.use('/api/v1/products', productRoutes); // Use the product routes
 app.use('/api/v1/suppliers', supplierRoutes);
 app.use('/api/v1/orders', orderRoutes);
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/sales', salesRoutes); // Use the sales routes
 
 // Root endpoint
 app.get('/', (req, res) => res.send(`App is running on port: ${PORT}`));
