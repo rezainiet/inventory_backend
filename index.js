@@ -27,6 +27,7 @@ app.use('/api/v1/orders', orderRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/sales', salesRoutes); // Use the sales routes
 
+// added live api key.
 // Root endpoint
 app.get('/', (req, res) => res.send(`App is running on port: ${PORT}`));
 

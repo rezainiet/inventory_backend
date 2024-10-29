@@ -101,7 +101,7 @@ export const getTotalSales = async (req, res) => {
     try {
         // Remove date filtering to get all sales data
         const salesData = await Order.find({});
-        console.log(salesData)
+        // console.log(salesData)
         if (!salesData.length) {
             return res.json({ totalSales: 0, totalProfit: 0, salesData: [] });
         }
