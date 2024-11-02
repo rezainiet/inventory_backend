@@ -19,8 +19,11 @@ const calculateProfit = async (order) => {
     order.products.forEach(item => {
         const product = productMap[item.product];
         if (product) {
-            const profit = item.price - product.productionCost; // Calculate profit per item
-            totalProfit += profit * item.quantity; // Multiply by quantity sold
+            const variant = product.variants.find(v => v.color === item.color && v.size === item.size);
+            if (variant) {
+                const profit = item.price - product.productionCost; // Assuming productionCost is the same for all variants
+                totalProfit += profit * item.quantity;
+            }
         }
     });
 

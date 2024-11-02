@@ -20,11 +20,16 @@ export const createOrder = async (req, res) => {
     }
 
     try {
-        // Check if order quantity exceeds stock
+        // Check if order quantity exceeds stock for each variant
         for (let item of products) {
             const product = await Product.findById(item.product);
-            if (!product || product.stock < item.quantity) {
-                return res.status(400).json({ message: `Insufficient stock for product ${product.name}. Available stock: ${product.stock}` });
+            if (!product) {
+                return res.status(400).json({ message: `Product not found: ${item.product}` });
+            }
+
+            const variant = product.variants.find(v => v.color === item.color && v.size === item.size);
+            if (!variant || variant.stock < item.quantity) {
+                return res.status(400).json({ message: `Insufficient stock for product ${product.name} (${item.color}, ${item.size}). Available stock: ${variant ? variant.stock : 0}` });
             }
         }
 
@@ -55,11 +60,21 @@ export const createOrder = async (req, res) => {
         // Save the order in the database
         const savedOrder = await newOrder.save();
 
-        // Update the stock for each product in the order
+        // Update the stock for each product variant in the order
         for (let item of products) {
-            await Product.findByIdAndUpdate(item.product, {
-                $inc: { stock: -item.quantity }
-            });
+            await Product.findOneAndUpdate(
+                {
+                    _id: item.product,
+                    'variants.color': item.color,
+                    'variants.size': item.size
+                },
+                {
+                    $inc: {
+                        'variants.$.stock': -item.quantity,
+                        stock: -item.quantity
+                    }
+                }
+            );
         }
 
         res.status(201).json({ message: 'Order created successfully', order: savedOrder });
@@ -68,7 +83,6 @@ export const createOrder = async (req, res) => {
         res.status(500).json({ message: 'Error creating order', error });
     }
 };
-
 
 // Get all orders excluding 'Delivered' and 'Cancelled' statuses
 export const getIncompleteOrders = async (req, res) => {
@@ -114,7 +128,6 @@ export const getIncompleteOrders = async (req, res) => {
     }
 };
 
-
 // Get all orders
 export const getAllOrders = async (req, res) => {
     const { search = '', page = 1, limit = 5, startDate, endDate } = req.query; // Default limit to 5
@@ -146,7 +159,7 @@ export const getAllOrders = async (req, res) => {
             .populate({
                 path: 'products.product', // Path to the product reference
                 model: 'Product',         // Refers to the Product model
-                select: 'name sku price category status', // Choose fields to include
+                select: 'name sku price category status variants', // Include variants
             });
 
         const totalOrders = await Order.countDocuments(query);
@@ -162,16 +175,34 @@ export const getAllOrders = async (req, res) => {
     }
 };
 
-
-
 export const deleteOrder = async (req, res) => {
     try {
         const orderId = req.params.id;
-        const result = await Order.findByIdAndDelete(orderId);
+        const order = await Order.findById(orderId);
 
-        if (!result) {
+        if (!order) {
             return res.status(404).json({ message: 'Order not found' });
         }
+
+        // Restore the stock for each product variant in the order
+        for (let item of order.products) {
+            await Product.findOneAndUpdate(
+                {
+                    _id: item.product,
+                    'variants.color': item.color,
+                    'variants.size': item.size
+                },
+                {
+                    $inc: {
+                        'variants.$.stock': item.quantity,
+                        stock: item.quantity
+                    }
+                }
+            );
+        }
+
+        // Delete the order
+        await Order.findByIdAndDelete(orderId);
 
         res.status(200).json({ message: 'Order deleted successfully' });
     } catch (error) {
@@ -179,7 +210,6 @@ export const deleteOrder = async (req, res) => {
         res.status(500).json({ message: 'Failed to delete order' });
     }
 };
-
 
 export const updateOrderStatus = async (req, res) => {
     const { orderId } = req.params;
@@ -194,8 +224,8 @@ export const updateOrderStatus = async (req, res) => {
         // Update the order with the new status
         const updatedOrder = await Order.findByIdAndUpdate(
             orderId,
-            { fulfillmentStatus }, // Correctly set the new status
-            { new: true } // Return the updated document
+            { fulfillmentStatus },
+            { new: true }
         );
 
         // Check if the order was found and updated
